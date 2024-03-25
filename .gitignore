@@ -4,3 +4,5 @@ CMakeLists.txt
 .docx
 .exe
 .dll
+
+.idea
