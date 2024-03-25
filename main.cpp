@@ -9,7 +9,6 @@ int main() {
     cout << "Change the type of process creating:" << endl;
     cout << "1. WinExec" << endl;
     cout << "2. ShellExecute" << endl;
-    cout << "3. CreateProcess" << endl;
     cin >> choice;
 
     // Создание процесса
@@ -21,72 +20,72 @@ int main() {
 
     switch (choice) {
         case 1:
-            if (!WinExec("notepad.exe", SW_SHOW)) {
-                cout << "Ошибка при создании процесса WinExec" << endl;
+            if (!WinExec(R"(C:\Windows\System32\notepad.exe)", SW_SHOW)) {
+                cout << "Error creating process WinExec" << endl;
                 return 1;
             }
             break;
         case 2:
-            if (!ShellExecute(NULL, "open", "notepad.exe", NULL, NULL, SW_SHOW)) {
-                cout << "Ошибка при создании процесса ShellExecute" << endl;
-                return 1;
-            }
-            break;
-        case 3:
-            if (!CreateProcess(NULL, "notepad.exe", NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) {
-                cout << "Ошибка при создании процесса CreateProcess" << endl;
+            if (!ShellExecute(NULL, "open", R"(C:\Windows\System32\notepad.exe)", NULL, NULL, SW_SHOW)) {
+                cout << "Error creating process ShellExecute" << endl;
                 return 1;
             }
             break;
         default:
-            cout << "Неверный выбор" << endl;
+            cout << "Incorrect choice" << endl;
             return 1;
     }
 
     // Получение дескриптора процесса
     DWORD processId;
-    cout << "Введите идентификатор процесса:" << endl;
+    cout << "Enter the process ID:" << endl;
     cin >> processId;
-    HANDLE processHandle = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, processId);
+    HANDLE processHandle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, processId);
     if (processHandle == NULL) {
-        cout << "Ошибка при получении дескриптора процесса" << endl;
+        cout << "Error getting process handle" << endl;
         return 1;
     }
+    cout << "Process ID (taken from handle): " << GetProcessId(processHandle) << endl << endl;
+
+    // Завершение процесса
+    if (!TerminateProcess(processHandle, 0)) {
+        cout << "Error closing process" << endl;
+        CloseHandle(processHandle);
+        return 1;
+    }
+    cout << "Process closed" << endl << endl;
 
     // Получение временных характеристик процесса
     FILETIME creationTime, exitTime, kernelTime, userTime;
     if (!GetProcessTimes(processHandle, &creationTime, &exitTime, &kernelTime, &userTime)) {
-        cout << "Ошибка при получении временных характеристик процесса" << endl;
+        cout << "Error getting process times" << endl;
         CloseHandle(processHandle);
         return 1;
     }
+
+    // Преобразуем FILETIME в системное время
+    SYSTEMTIME creationSystemTime, exitSystemTime;
+    FileTimeToSystemTime(&creationTime, &creationSystemTime);
+    FileTimeToSystemTime(&exitTime, &exitSystemTime);
 
     // Вывод временных характеристик процесса
-    cout << "Время создания процесса:" << endl;
-    cout << "  Секунды: " << creationTime.dwLowDateTime / 10000000 << endl;
-    cout << "  Миллисекунды: " << creationTime.dwLowDateTime % 10000000 / 1000 << endl;
+    cout << "Process creating time:" << endl;
+    cout << creationSystemTime.wYear << "-" << creationSystemTime.wMonth << "-" << creationSystemTime.wDay << " " << creationSystemTime.wHour << ":" << creationSystemTime.wMinute << ":" << creationSystemTime.wSecond << endl;
 
-    cout << "Время завершения процесса:" << endl;
-    cout << "  Секунды: " << exitTime.dwLowDateTime / 10000000 << endl;
-    cout << "  Миллисекунды: " << exitTime.dwLowDateTime % 10000000 / 1000 << endl;
+    cout << "Process closing time:" << endl;
+    cout << exitSystemTime.wYear << "-" << exitSystemTime.wMonth << "-" << exitSystemTime.wDay << " " << exitSystemTime.wHour << ":" << exitSystemTime.wMinute << ":" << exitSystemTime.wSecond << endl;
 
-    cout << "Время работы процесса в ядре:" << endl;
-    cout << "  Секунды: " << kernelTime.dwLowDateTime / 10000000 << endl;
-    cout << "  Миллисекунды: " << kernelTime.dwLowDateTime % 10000000 / 1000 << endl;
+    cout << "Process operating time in kernel mode:" << endl;
+    cout << "  Seconds: " << kernelTime.dwLowDateTime / 10000000 << endl;
+    cout << "  Milliseconds: " << kernelTime.dwLowDateTime % 10000000 / 1000 << endl;
 
-    cout << "Время работы процесса в пользовательском режиме:" << endl;
-    cout << "  Секунды: " << userTime.dwLowDateTime / 10000000 << endl;
-    cout << "  Миллисекунды: " << userTime.dwLowDateTime % 10000000 / 1000 << endl;
-
-    // Завершение процесса
-    if (!TerminateProcess(processHandle, 0)) {
-        cout << "Ошибка при завершении процесса" << endl;
-        CloseHandle(processHandle);
-        return 1;
-    }
+    cout << "Process operating time in user mode:" << endl;
+    cout << "  Seconds: " << userTime.dwLowDateTime / 10000000 << endl;
+    cout << "  Milliseconds: " << userTime.dwLowDateTime % 10000000 / 1000 << endl << endl;
 
     // Закрытие дескриптора процесса
     CloseHandle(processHandle);
+    cout << "Handle closed" << endl;
 
     return 0;
 }
