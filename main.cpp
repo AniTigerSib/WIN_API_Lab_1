@@ -4,7 +4,6 @@
 using namespace std;
 
 int main() {
-    system("chcp 1251");
     int choice;
     cout << "Change the type of process creating:" << endl;
     cout << "1. WinExec" << endl;
@@ -12,12 +11,6 @@ int main() {
     cin >> choice;
 
     // Создание процесса
-    STARTUPINFO si;
-    PROCESS_INFORMATION pi;
-    ZeroMemory(&si, sizeof(si));
-    si.cb = sizeof(si);
-    ZeroMemory(&pi, sizeof(pi));
-
     switch (choice) {
         case 1:
             if (!WinExec(R"(C:\Windows\System32\notepad.exe)", SW_SHOW)) {
